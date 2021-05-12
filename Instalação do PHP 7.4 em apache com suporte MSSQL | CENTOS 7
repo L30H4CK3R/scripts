@@ -1,0 +1,54 @@
+echo ""
+echo ===========================================
+echo ==="Preparando servidor para instalação"===
+echo ===========================================
+echo ""
+echo "Informe o nome do novo usuário"
+read -a VarUser
+useradd $VarUser && passwd $VarUser
+echo ""
+echo "Informe o nome do servidor"
+read -a VarServer
+hostnamectl set-hostname $VarServer
+echo ""
+echo ===========================================
+echo ====="Iniciando Instalação do PHP 7.4"=====
+echo ========="com suporte para MSSQL"==========
+echo ===========================================
+echo ""
+echo ""
+echo ===========================================
+echo ====="Efetuando instalação de pacotes"=====
+echo ===========================================
+yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm &&
+yum install -y https://rpms.remirepo.net/enterprise/remi-release-7.rpm &&
+yum install -y yum-utils &&
+yum-config-manager --enable remi-php74 &&
+yum update -y &&
+yum install -y php php-pdo php-xml php-pear php-devel re2c gcc-c++ gcc &&
+echo ""
+echo ""
+echo ===========================================
+echo ====="Efetuando instalação de ODBC SQL"====
+echo ===========================================
+curl https://packages.microsoft.com/config/rhel/7/prod.repo > /etc/yum.repos.d/mssql-release.repo &&
+yum remove unixODBC-utf16 unixODBC-utf16-devel -y
+ACCEPT_EULA=Y yum install msodbcsql17 -y
+echo ""
+echo ""
+echo ===========================================
+echo ========="Configurando Firewall "==========
+echo ===========================================
+sed -i 's/enforcing/disabled/' /etc/selinux/config
+firewall-cmd --add-service=https --permanent
+firewall-cmd --add-service=http --permanent
+firewall-cmd --remove-service=dhcpv6-client --permanent
+firewall-cmd --reload
+firewall-cmd --list-services
+echo ""
+echo ""
+echo ===========================================
+echo ====="Habilitando Web Service Apache "=====
+echo ===========================================
+systemctl enable httpd
+systemctl start httpd
